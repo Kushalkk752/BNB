@@ -13,5 +13,6 @@ public class RoomsDto {
     private String type;
     private Integer count;
     private LocalDate date;
+//    private Double pricePerNight;
     private Property property;
 }

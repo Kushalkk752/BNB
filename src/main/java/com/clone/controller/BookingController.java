@@ -4,6 +4,7 @@ import com.clone.component.TwilioConfig;
 import com.clone.entity.Bookings;
 import com.clone.entity.Property;
 import com.clone.entity.Rooms;
+import com.clone.exception.ResourceNotFoundException;
 import com.clone.repository.BookingsRepository;
 import com.clone.repository.PropertyRepository;
 import com.clone.repository.RoomsRepository;
@@ -44,13 +45,18 @@ public class BookingController {
             @RequestParam String type,
             @RequestBody Bookings bookings
     ) {
-        Property property = propertyRepository.findById(propertyId).orElseThrow();
+        Property property = propertyRepository.findById(propertyId).orElseThrow(
+                ()-> new ResourceNotFoundException("Property not found")
+        );
         List<Rooms> rooms = roomsRepository.findByTypeAndProperty(bookings.getFromDate(), bookings.getToDate(), type, property);
         for (Rooms room : rooms) {
             if (room.getCount() == 0) {
                 return new ResponseEntity<>("No Rooms available for " + room.getDate(), HttpStatus.INTERNAL_SERVER_ERROR);
             }
         }
+//        for(Rooms room : rooms) {
+//           double totalPrice =  room.getPricePerNight()*(double)(rooms.size()-1)*1.18;
+//        }
         bookings.setProperty(property);
         Bookings savedBooking = bookingsRepository.save(bookings);
         if (savedBooking != null) {
@@ -60,7 +66,7 @@ public class BookingController {
             }
         }
         pdfService.generateBookingPdf("C:\\Users\\NEW\\Desktop\\Programs Intellij\\Hms_bookings\\confirmation-order " + savedBooking.getId() + ".pdf", property);
-        twilioService.sendSMS("+916362841854","+14142400344", "Booking confirmed you bookin id is "+bookings.getId());
+//        twilioService.sendSMS("+916362841854","+14142400344", "Booking confirmed you bookin id is "+bookings.getId());
         twilioWhatsAppService.sendWhatsAppMessage("+916362841854","Booking confirmed you bookin id is "+bookings.getId());
         return new ResponseEntity<>(rooms, HttpStatus.OK);
     }
